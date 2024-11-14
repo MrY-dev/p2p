@@ -2,9 +2,8 @@
 two seperate make files are there for both tracker and client , we need to run them both before starting
 
 # Tracker
-only one tracker was implemented, which stores filename,ip,piecewise,filesize  information from clients, groups were not implemented,
-but login and create_user were implemented
-
+Tracker keeps track of the pieces of information that every peer holds, whenever a request is made by client, the information about the pieces is
+sent to it directly
 # client
 
 whenever download is requested the file gathers piecewise information of file and ips from tracker from there, each piece is requested iin 
