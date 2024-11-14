@@ -1,39 +1,8 @@
-#include<iostream>
-#include <sstream>
-#include<unordered_map>
-#include <cstring>
-#include<thread>
-#include<arpa/inet.h>
-#include<string>
-#include<sys/socket.h>
-#include<sys/types.h>
-#include<fcntl.h>
-#include<netdb.h>
-#include<netinet/in.h>
-#include<unistd.h>
-#include<sys/stat.h>
-#include<mutex>
-#include<vector>
-
-#define BLK   512
+#include "tracker.h"
 typedef unsigned long long ull;
 using namespace std;
 typedef struct sockaddr_in  sockaddr_in;
-typedef struct list_info{
-    string ip;
-    string port;
-    string mask;	
-} list_info;
-typedef struct user_info_t{
-    string name;
-    string password;
-    bool status;
-    user_info_t(){
-        status = false;
-        name ="";
-        password="";
-    }
-}user_info;
+
 
 unordered_map <string,vector<string>> list_table; // filename ->[ip:port, piecewisemask],[ip:port piecewisemask]
 unordered_map <string,unordered_map<string,string>> file_mask; // filename -> ip -> filepiece maske
@@ -42,16 +11,14 @@ unordered_map <string,user_info>  user_table;
 
 mutex map_lock;
 
-typedef struct group{
-    int id ;
-    vector<string> members;
-}group;
 unordered_map <string,group> validate_table; // filename -> [id,ip:port] join if the requested ip:port isnt in the validate_table[filename]
+
 void check(int status,string msg){
     if(status< 0){
         perror(msg.c_str());
     }
 }
+
 vector<string> tokenize(string s){
     vector<string> res;
     string token;
@@ -61,6 +28,7 @@ vector<string> tokenize(string s){
     }
     return res;
 }
+
 string create_list(string req){ // takes filename as argument request should specify the filename
     vector<string> update = tokenize(req);
     if(update.size() < 2){
@@ -113,6 +81,7 @@ void update_list(string req){ // takes whole req as argument to update the table
     cout << "uploaded succesfully " << "\n";
     return;
 }
+
 string create_user(string req)
 {
     vector<string> user_string = tokenize(req);
@@ -130,6 +99,7 @@ string create_user(string req)
     }
     return "user already exists";
 }
+
 string login_user(string req){
     vector<string> user_string =  tokenize(req);
     if(user_string.size() < 5){
@@ -145,6 +115,7 @@ string login_user(string req){
     }
     return "invalid credentials";
 }
+
 string logout_user(string req){
     vector<string> user_string = tokenize(req);
     if(user_string.size() < 3){
@@ -158,6 +129,7 @@ string logout_user(string req){
     cout << "logged out succesfully" << "\n";
     return "logged out succesfully";
 }
+
 void req_handler(int newfd){
     char req[3072];
 
@@ -203,11 +175,13 @@ void req_handler(int newfd){
     close(newfd); //close the table before the opearations
     map_lock.unlock();
 }
+
 int main(int argc, char** argv){
     if(argc < 2){
         cout << "invalid usage "<< "\n";
         return 0 ;
     }
+
     int fd1 =  open(argv[1],O_RDONLY);
     struct stat file_info;
     stat(argv[1],&file_info);
@@ -231,14 +205,16 @@ int main(int argc, char** argv){
     int sockfd,portno;
     socklen_t client;
     sockaddr_in server_addr , client_addr;
-    string msg = "hello world from server";
     sockfd = socket(AF_INET,SOCK_STREAM,0);
     explicit_bzero((void *)&server_addr, sizeof(server_addr));
+
     portno = atoi(tracker_port.c_str());
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = inet_addr(tracker_ip.c_str());
     server_addr.sin_port = htons(portno);
+
     check(bind(sockfd,(sockaddr *)&server_addr,sizeof(server_addr)),"binding failed");
+
     while(true){
         listen(sockfd,5);
         int newfd = accept(sockfd,NULL,NULL);
@@ -246,5 +222,6 @@ int main(int argc, char** argv){
         thread t1(req_handler,newfd);
         t1.detach();
     }
+
     close(sockfd);
 }

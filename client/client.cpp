@@ -1,36 +1,5 @@
-#include<atomic>
-#include<algorithm>
-#include<random>
-#include<iomanip>
-#include <cmath>
-#include <cstddef>
-#include<openssl/sha.h>
-#include <cstdio>
-#include<vector>
-#include<sstream>
-#include <unordered_map>
-#include<iostream>
-#include <cstring>
-#include <strings.h>
-#include<thread>
-#include<arpa/inet.h>
-#include<string>
-#include<sys/socket.h>
-#include<sys/types.h>
-#include<fcntl.h>
-#include<netdb.h>
-#include<netinet/in.h>
-#include<unistd.h>
-#include<sys/stat.h>
-#include<mutex>
-// buff size for communication
-#define BUFF_SIZE 2048
-// piece of size 512kb
-#define CHUNK 524288
-// subpiece of size 32kb
-#define SUBCHUNK 32768
+#include "client.h"
 
-typedef unsigned long long  ull;
 std::mutex tmp_lock;
 using namespace std;
 string server_ip;
@@ -41,23 +10,11 @@ string tracker_port;
 typedef struct sockaddr_in  sockaddr_in;
 //typedef struct hostent  hostent;
 sockaddr_in tracker;
-typedef struct ip_info{
-    string ip;
-    uint port;
-    string mask;
-    ull filesize;
-}ip_info;
-
 void check (int x,string msg=""){
     if(x < 0){
         cout << msg << "\n";
     }
 }
-typedef struct file_info{
-    string filepiece;
-    string filehash;
-    ull size;
-} file_info;
 
 vector<string> tokenizer(string one){
     vector<string> res;
@@ -242,6 +199,7 @@ string gethash(ip_info ip,int piece,string filename){
     close(sockfd);
     return hashbuff;
 }
+
 void update_tracker(string filename, string mask,uint filesize){
     int sockfd = socket(AF_INET,SOCK_STREAM,0);
     string req = "2 "+ filename+ " "+ server_ip+':'+server_port+" "+ mask+ " "+to_string(filesize);
@@ -252,6 +210,7 @@ void update_tracker(string filename, string mask,uint filesize){
     close(sockfd);
     return;
 }
+
 string getcurrhash(int fd, size_t curr_piece,size_t filesize,size_t len){
     lseek(fd,curr_piece*CHUNK,SEEK_SET);
     if(curr_piece +1 == len){
